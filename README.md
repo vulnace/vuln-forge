@@ -40,28 +40,6 @@
 - [Known Limitations](#known-limitations)
 - [Changelog](#changelog)
 
----
-
-## Demo
-
-### CLI Pipeline
-
-<p align="center">
-  <img src="docs/cli.gif" width="900"/>
-</p>
-
-> Full scan running in terminal — pipeline stages, live findings, Discord notification firing.
-
-### Web Dashboard
-
-<p align="center">
-  <img src="docs/web.gif" width="900"/>
-</p>
-
-> Typing a domain → Launch → live terminal feed → results populating → finding detail modal → PDF download.
-
----
-
 ## ⚠️ Legal Disclaimer
 
 **This tool is for authorized security testing only.**
@@ -217,6 +195,28 @@ vuln-forge/
 └── data/                       ← Scan databases (gitignored)
     └── example.com.db
 ```
+
+---
+
+## Demo
+
+### CLI Pipeline
+
+<p align="center">
+  <img src="docs/cli.gif" width="900"/>
+</p>
+
+> Full scan running in terminal — pipeline stages, live findings, Discord notification firing.
+
+### Web Dashboard
+
+<p align="center">
+  <img src="docs/web.gif" width="900"/>
+</p>
+
+> Typing a domain → Launch → live terminal feed → results populating → finding detail modal → PDF download.
+
+---
 
 ---
 
