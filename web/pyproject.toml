@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "vuln-forge"
+version = "1.0.0"
+description = "Automated Web Vulnerability Scanner"
+requires-python = ">=3.11"
+dependencies = [
+    "requests",
+    "fastapi",
+    "uvicorn[standard]",
+    "websockets",
+    "jinja2",
+    "python-multipart",
+    "weasyprint",
+    "aiofiles",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = [
+    "pipeline*",
+    "tools*",
+    "notifier*",
+    "utils*",
+    "web*",
+]
+
+[project.scripts]
+vuln-forge = "main:main"

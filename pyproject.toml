@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=65.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "web-vuln-forge"
+version = "0.1.0"
+description = "Automated reconnaissance and vulnerability scanning framework"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+
+dependencies = [
+    "requests>=2.25.0",
+    "fastapi",
+    "uvicorn[standard]",
+    "websockets",
+    "jinja2",
+    "python-multipart",
+    "weasyprint",
+    "aiofiles",
+]
+
+[project.scripts]
+vulnforge = "main:main"
+
+[tool.setuptools]
+py-modules = ["main", "database"]
+include-package-data = true
+
+[tool.setuptools.package-data]
+"web" = ["*.html", "static/css/*", "static/js/*", "templates/*"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+exclude = ["tests*"]

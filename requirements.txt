@@ -1,0 +1,12 @@
+requests>=2.25.0
+fastapi
+uvicorn[standard]
+websockets
+jinja2
+python-multipart
+weasyprint
+aiofiles
+
+# Not Python packages — install binaries / use your Docker image, e.g.:
+# amass, subfinder, httpx, katana, gau, arjun, nuclei, nikto, dalfox, stdbuf
+# sqlmap: expected at /opt/sqlmap/sqlmap.py (see tools/sqlmap.py)

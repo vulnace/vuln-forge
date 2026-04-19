@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VULN-FORGE </title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Fira+Code:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+<canvas id="particles" class="particles-canvas"></canvas>
+
+<div class="noise-overlay"></div>
+
+<main class="main" id="workspace-viewport">
+    <div id="workspace-container">
+
+        <div class="workspace" id="ws-cmd">
+            <header class="topbar">
+                <div class="topbar-path">
+                    <span class="path-root">vuln-forge</span>
+                    <span class="path-sep">/</span>
+                    <span class="path-current" id="pathCurrent">terminal</span>
+                </div>
+                <div class="topbar-center" id="scanProgress" style="display:none">
+                    <div class="progress-stages" id="progressStages">
+                        <div class="prog-stage" id="ps-subdomains">SUBDOMAINS</div>
+                        <div class="prog-arrow">›</div>
+                        <div class="prog-stage" id="ps-livehosts">LIVE HOSTS</div>
+                        <div class="prog-arrow">›</div>
+                        <div class="prog-stage" id="ps-endpoints">ENDPOINTS</div>
+                        <div class="prog-arrow">›</div>
+                        <div class="prog-stage" id="ps-parameters">PARAMS</div>
+                        <div class="prog-arrow">›</div>
+                        <div class="prog-stage" id="ps-vulnscan">VULNS</div>
+                    </div>
+                </div>
+                <div class="topbar-right">
+                    <div class="live-badges" id="liveBadges" style="display:none">
+                        <span class="badge crit" id="bc">C:0</span>
+                        <span class="badge high" id="bh">H:0</span>
+                        <span class="badge med"  id="bm">M:0</span>
+                        <span class="badge low"  id="bl">L:0</span>
+                    </div>
+                    <button class="dash-trigger-btn" onclick="slideWorkspace(1)">ACCESS DASHBOARD ➔</button>
+                    <div class="topbar-clock" id="clock"></div>
+                </div>
+            </header>
+
+            <section class="scan-grid" style="display:grid; flex:1; overflow:hidden;">
+                <div class="glass-card scan-card">
+                    <div class="card-head">
+                        <span class="card-tag">01</span>
+                        <span class="card-title">TARGET ACQUISITION</span>
+                    </div>
+
+                    <div class="target-field">
+                        <div class="target-label">TARGET://</div>
+                        <input id="domainInput" type="text" class="target-input" placeholder="enter domain..." autocomplete="off" spellcheck="false"/>
+                        <div class="target-status" id="targetStatus"><span class="ts-dot"></span></div>
+                    </div>
+
+                    <div class="card-head" style="margin-top:24px">
+                        <span class="card-tag">02</span>
+                        <span class="card-title">ATTACK OPTIONS</span>
+                    </div>
+
+                    <div class="options-list">
+                        <label class="opt-row">
+                            <div class="opt-left">
+                                <span class="opt-name">FRESH DATABASE</span>
+                                <span class="opt-desc">Wipe existing scan data before starting</span>
+                            </div>
+                            <div class="toggle" id="tog-fresh" onclick="toggleOpt(this)"><div class="tog-slider"></div></div>
+                        </label>
+                        <label class="opt-row">
+                            <div class="opt-left">
+                                <span class="opt-name">TEST MODE</span>
+                                <span class="opt-desc">Cap all inputs to 1 for rapid validation</span>
+                            </div>
+                            <div class="toggle" id="tog-test" onclick="toggleOpt(this)"><div class="tog-slider"></div></div>
+                        </label>
+                        <label class="opt-row">
+                            <div class="opt-left">
+                                <span class="opt-name">ACTIVE RECON</span>
+                                <span class="opt-desc">Enable Amass active DNS enumeration</span>
+                            </div>
+                            <div class="toggle" id="tog-active" onclick="toggleOpt(this)"><div class="tog-slider"></div></div>
+                        </label>
+                        <label class="opt-row">
+                            <div class="opt-left">
+                                <span class="opt-name">SILENT MODE</span>
+                                <span class="opt-desc">Skip Discord &amp; Telegram notifications</span>
+                            </div>
+                            <div class="toggle" id="tog-silent" onclick="toggleOpt(this)"><div class="tog-slider"></div></div>
+                        </label>
+                        <label class="opt-row">
+                            <div class="opt-left">
+                                <span class="opt-name">DEBUG OUTPUT</span>
+                                <span class="opt-desc">Verbose logs in terminal feed</span>
+                            </div>
+                            <div class="toggle" id="tog-debug" onclick="toggleOpt(this)"><div class="tog-slider"></div></div>
+                        </label>
+                    </div>
+
+                    <div class="card-head" style="margin-top:24px">
+                        <span class="card-tag">03</span>
+                        <span class="card-title">EXECUTE</span>
+                    </div>
+
+                    <button class="launch-btn" id="btnStart" onclick="startScan()">
+                        <span class="launch-icon">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                        </span>
+                        <div class="launch-text">
+                            <span class="launch-main">LAUNCH SCAN</span>
+                            <span class="launch-sub">Initialize attack pipeline</span>
+                        </div>
+                        <div class="launch-shine"></div>
+                    </button>
+
+                    <button class="abort-btn" id="btnStop" disabled onclick="stopScan()">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><rect x="6" y="6" width="12" height="12"/></svg>
+                        ABORT MISSION
+                    </button>
+                </div>
+
+                <div class="glass-card terminal-card">
+                    <div class="terminal-bar">
+                        <div class="mac-dots">
+                            <span class="mac-dot mac-red"></span>
+                            <span class="mac-dot mac-yellow"></span>
+                            <span class="mac-dot mac-green"></span>
+                        </div>
+                        <span class="terminal-title-text">operator@vuln-forge ~ live feed</span>
+                        <button class="clr-btn" onclick="clearTerminal()">CLEAR</button>
+                    </div>
+                    <div class="terminal-output" id="terminal">
+                        <div class="term-welcome" id="termWelcome">
+                            <pre class="ascii-banner">
+ ██╗   ██╗██╗   ██╗██╗     ███╗   ██╗    ███████╗ ██████╗ ██████╗  ██████╗ ███████╗
+ ██║   ██║██║   ██║██║     ████╗  ██║    ██╔════╝██╔═══██╗██╔══██╗██╔════╝ ██╔════╝
+ ██║   ██║██║   ██║██║     ██╔██╗ ██║    █████╗  ██║   ██║██████╔╝██║  ███╗█████╗
+ ╚██╗ ██╔╝██║   ██║██║     ██║╚██╗██║    ██╔══╝  ██║   ██║██╔══██╗██║   ██║██╔══╝
+  ╚████╔╝ ╚██████╔╝███████╗██║ ╚████║    ██║     ╚██████╔╝██║  ██║╚██████╔╝███████╗
+   ╚═══╝   ╚═════╝ ╚══════╝╚═╝  ╚═══╝    ╚═╝      ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚══════╝</pre>
+                            <p class="wb">// Automated Web Vulnerability Scanner</p>
+                            <p class="wb">// System ready — awaiting target designation</p>
+                            <p class="wb dim">// All activities must be authorized by target owner</p>
+                            <span class="cursor-blink">█</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <div class="workspace" id="ws-dash">
+            <header class="topbar">
+                <div class="topbar-path">
+                    <span class="path-root">vuln-forge</span>
+                    <span class="path-sep">/</span>
+                    <span class="path-current">dashboard</span>
+                </div>
+                <div class="topbar-center">
+                    <div class="results-target" id="resultsTarget" style="font-family:var(--font-display); font-size:14px; font-weight:600; color:var(--green); letter-spacing:1px;">
+                        AWAITING SCAN DATA
+                    </div>
+                </div>
+                <div class="topbar-right">
+                    <button class="tool-btn" onclick="downloadPDF()">↓ PDF</button>
+                    <button class="tool-btn cyan" onclick="downloadCSV()">↓ CSV</button>
+                    <button class="tool-btn amber" onclick="renotify()">⚡ NOTIFY</button>
+                    <button class="dash-trigger-btn" onclick="slideWorkspace(0)">◀ RETURN TO TERMINAL</button>
+                </div>
+            </header>
+
+            <div class="dash-layout">
+                
+                <div style="display:flex; flex-direction:column;">
+                    <div class="stat-strip" id="statStrip" style="border-radius: 8px 8px 0 0; border: 1px solid var(--border); border-bottom: none;">
+                        <div class="stat-card s-critical"><div class="stat-icon">⬡</div><div class="stat-num" id="sc-critical">0</div><div class="stat-lbl">CRITICAL</div></div>
+                        <div class="stat-card s-high"><div class="stat-icon">⬡</div><div class="stat-num" id="sc-high">0</div><div class="stat-lbl">HIGH</div></div>
+                        <div class="stat-card s-medium"><div class="stat-icon">⬡</div><div class="stat-num" id="sc-medium">0</div><div class="stat-lbl">MEDIUM</div></div>
+                        <div class="stat-card s-low"><div class="stat-icon">⬡</div><div class="stat-num" id="sc-low">0</div><div class="stat-lbl">LOW</div></div>
+                        <div class="stat-card s-info"><div class="stat-icon">⬡</div><div class="stat-num" id="sc-info">0</div><div class="stat-lbl">INFO</div></div>
+                        <div class="stat-card s-total"><div class="stat-icon">⬡</div><div class="stat-num" id="sc-total">0</div><div class="stat-lbl">TOTAL</div></div>
+                    </div>
+                    <div class="dist-chart">
+                        <div class="dist-bar db-crit" id="db-crit"></div>
+                        <div class="dist-bar db-high" id="db-high"></div>
+                        <div class="dist-bar db-med" id="db-med"></div>
+                        <div class="dist-bar db-low" id="db-low"></div>
+                    </div>
+                </div>
+
+                <div class="dash-grid-split">
+                    <div class="dash-panel">
+                        <div class="results-bar" style="border-radius: 0; border: none; border-bottom: 1px solid var(--border);">
+                            <div class="filter-pills">
+                                <button class="pill active" data-f="all" onclick="filter('all',this)">ALL</button>
+                                <button class="pill crit" data-f="critical" onclick="filter('critical',this)">CRIT</button>
+                                <button class="pill high" data-f="high" onclick="filter('high',this)">HIGH</button>
+                                <button class="pill med" data-f="medium" onclick="filter('medium',this)">MED</button>
+                                <button class="pill low" data-f="low" onclick="filter('low',this)">LOW</button>
+                            </div>
+                            <input class="search-box" id="searchBox" placeholder="search..." oninput="applyFilters()" style="margin-left:auto;">
+                        </div>
+                        <div class="table-wrap">
+                            <table class="vtable" id="vtable">
+                                <thead>
+                                    <tr>
+                                        <th style="width:40px">#</th>
+                                        <th style="width:100px">SEVERITY</th>
+                                        <th>TYPE</th>
+                                        <th>TARGET</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="vtbody">
+                                    <tr><td colspan="4" class="empty-row">No results loaded</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="dash-panel">
+                        <div class="hist-header" style="border-bottom: 1px solid var(--border);">
+                            <span class="hist-title">SCAN HISTORY</span>
+                            <button class="tool-btn" onclick="loadHistory()">↺ REFRESH</button>
+                        </div>
+                        <div class="hist-grid" id="histGrid" style="padding: 16px; gap: 10px;">
+                            <p class="empty-row" style="padding:32px">No previous scans found.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal()">
+    <div class="modal-box" onclick="event.stopPropagation()">
+        <div class="modal-head">
+            <span class="modal-title" id="modalTitle">FINDING DETAIL</span>
+            <button class="modal-close" onclick="closeModal()">✕</button>
+        </div>
+        <div class="modal-body" id="modalBody"></div>
+    </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script src="/static/js/script.js"></script>
+</body>
+</html>

@@ -1,0 +1,271 @@
+# ════════════════════════════════════════════════════════════════
+#  VULN-FORGE — Docker Compose
+#  Automated Web Vulnerability Scanner
+#
+#  BUILD ORDER (required before first run):
+#    sudo docker compose build scanner
+#    sudo docker compose build web
+#
+#  QUICK START:
+#    sudo docker compose up -d web          → start dashboard
+#    sudo docker compose run --rm scanner -d example.com
+#    open http://localhost:8000
+# ════════════════════════════════════════════════════════════════
+
+x-scanner-base: &scanner-base
+  image: vuln-forge
+  env_file: .env
+  volumes:
+    - scan-data:/app/data
+  networks:
+    - vf-net
+
+
+services:
+
+  # ──────────────────────────────────────────────────────────────
+  # WEB DASHBOARD
+  #
+  # Builds FROM vuln-forge:latest — build scanner first.
+  #
+  # Usage:
+  #   sudo docker compose up -d web        (background)
+  #   sudo docker compose up web           (foreground / logs)
+  #   sudo docker compose down             (stop)
+  #   sudo docker compose logs -f web      (follow logs)
+  #
+  # Access: http://localhost:8000
+  # ──────────────────────────────────────────────────────────────
+  web:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+    image: vuln-forge-web
+    container_name: vf-web
+    env_file: .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - scan-data:/app/data
+    networks:
+      - vf-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+
+  # ──────────────────────────────────────────────────────────────
+  # FULL PIPELINE — STANDARD
+  #
+  # Usage:
+  #   sudo docker compose run --rm scanner -d example.com
+  #   sudo docker compose run --rm scanner -d example.com --debug
+  #   sudo docker compose run --rm scanner -d example.com --no-notify
+  # ──────────────────────────────────────────────────────────────
+  scanner:
+    <<: *scanner-base
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vf-scanner
+    entrypoint: ["python3", "-u", "main.py"]
+
+
+  # ──────────────────────────────────────────────────────────────
+  # FULL PIPELINE — FRESH SCAN
+  # Wipes existing DB before starting
+  #
+  # Usage:
+  #   sudo docker compose run --rm scanner-fresh -d example.com
+  # ──────────────────────────────────────────────────────────────
+  scanner-fresh:
+    <<: *scanner-base
+    entrypoint: ["python3", "-u", "main.py", "--fresh", "--yes"]
+
+
+  # ──────────────────────────────────────────────────────────────
+  # FULL PIPELINE — ACTIVE RECON
+  # Enables Amass active DNS enumeration (noisier, more thorough)
+  #
+  # Usage:
+  #   sudo docker compose run --rm scanner-active -d example.com
+  # ──────────────────────────────────────────────────────────────
+  scanner-active:
+    <<: *scanner-base
+    entrypoint: ["python3", "-u", "main.py", "--active"]
+
+
+  # ──────────────────────────────────────────────────────────────
+  # FULL PIPELINE — TEST MODE
+  # Caps all tool inputs to 1 — fast validation run
+  #
+  # Usage:
+  #   sudo docker compose run --rm scanner-test -d example.com
+  # ──────────────────────────────────────────────────────────────
+  scanner-test:
+    <<: *scanner-base
+    entrypoint: ["python3", "-u", "main.py", "--test"]
+
+
+  # ──────────────────────────────────────────────────────────────
+  # FULL PIPELINE — SILENT (no notifications)
+  #
+  # Usage:
+  #   sudo docker compose run --rm scanner-silent -d example.com
+  # ──────────────────────────────────────────────────────────────
+  scanner-silent:
+    <<: *scanner-base
+    entrypoint: ["python3", "-u", "main.py", "--no-notify"]
+
+
+  # ──────────────────────────────────────────────────────────────
+  # FULL PIPELINE — FRESH + ACTIVE + SILENT (power combo)
+  #
+  # Usage:
+  #   sudo docker compose run --rm scanner-full -d example.com
+  # ──────────────────────────────────────────────────────────────
+  scanner-full:
+    <<: *scanner-base
+    entrypoint: ["python3", "-u", "main.py", "--fresh", "--yes", "--active", "--no-notify"]
+
+
+  # ──────────────────────────────────────────────────────────────
+  # STANDALONE — VULNERABILITY SCAN ONLY
+  # Runs vuln stage against an existing DB
+  #
+  # Usage:
+  #   sudo docker compose run --rm vuln -- -db data/example.com.db
+  #   sudo docker compose run --rm vuln -- -db data/example.com.db --debug
+  #   sudo docker compose run --rm vuln -- -db data/example.com.db --no-notify
+  # ──────────────────────────────────────────────────────────────
+  vuln:
+    <<: *scanner-base
+    entrypoint: ["python3", "-u", "pipeline/vulnerabilities.py"]
+
+
+  # ──────────────────────────────────────────────────────────────
+  # STANDALONE — VULN SCAN TEST MODE
+  #
+  # Usage:
+  #   sudo docker compose run --rm vuln-test -- -db data/example.com.db
+  # ──────────────────────────────────────────────────────────────
+  vuln-test:
+    <<: *scanner-base
+    entrypoint: ["python3", "-u", "pipeline/vulnerabilities.py", "--test"]
+
+
+  # ──────────────────────────────────────────────────────────────
+  # STANDALONE — SUBDOMAIN ENUMERATION
+  #
+  # Usage:
+  #   sudo docker compose run --rm subdomains -- -d example.com -db data/example.com.db
+  # ──────────────────────────────────────────────────────────────
+  subdomains:
+    <<: *scanner-base
+    entrypoint: ["python3", "-u", "pipeline/subdomains.py"]
+
+
+  # ──────────────────────────────────────────────────────────────
+  # STANDALONE — LIVE HOST DETECTION
+  #
+  # Usage:
+  #   sudo docker compose run --rm livehosts -- -db data/example.com.db
+  # ──────────────────────────────────────────────────────────────
+  livehosts:
+    <<: *scanner-base
+    entrypoint: ["python3", "-u", "pipeline/live_hosts.py"]
+
+
+  # ──────────────────────────────────────────────────────────────
+  # STANDALONE — ENDPOINT DISCOVERY
+  #
+  # Usage:
+  #   sudo docker compose run --rm endpoints -- -db data/example.com.db
+  # ──────────────────────────────────────────────────────────────
+  endpoints:
+    <<: *scanner-base
+    entrypoint: ["python3", "-u", "pipeline/endpoints.py"]
+
+
+  # ──────────────────────────────────────────────────────────────
+  # STANDALONE — PARAMETER DISCOVERY
+  #
+  # Usage:
+  #   sudo docker compose run --rm parameters -- -db data/example.com.db
+  # ──────────────────────────────────────────────────────────────
+  parameters:
+    <<: *scanner-base
+    entrypoint: ["python3", "-u", "pipeline/parameters.py"]
+
+
+  # ──────────────────────────────────────────────────────────────
+  # STANDALONE — NIKTO
+  #
+  # Usage:
+  #   sudo docker compose run --rm nikto -- -u https://example.com
+  # ──────────────────────────────────────────────────────────────
+  nikto:
+    <<: *scanner-base
+    entrypoint: ["python3", "-u", "tools/nikto.py"]
+
+
+  # ──────────────────────────────────────────────────────────────
+  # STANDALONE — VIEW RESULTS (CLI table)
+  #
+  # Usage:
+  #   sudo docker compose run --rm view -- -db data/example.com.db
+  # ──────────────────────────────────────────────────────────────
+  view:
+    <<: *scanner-base
+    entrypoint: ["python3", "-u", "utils/view_vulnerabilities.py"]
+
+
+  # ──────────────────────────────────────────────────────────────
+  # STANDALONE — DISCORD NOTIFICATION
+  #
+  # Usage:
+  #   sudo docker compose run --rm notify-discord -- -db data/example.com.db
+  # ──────────────────────────────────────────────────────────────
+  notify-discord:
+    <<: *scanner-base
+    entrypoint: ["python3", "-u", "notifier/discord.py"]
+
+
+  # ──────────────────────────────────────────────────────────────
+  # STANDALONE — TELEGRAM NOTIFICATION
+  #
+  # Usage:
+  #   sudo docker compose run --rm notify-telegram -- -db data/example.com.db
+  # ──────────────────────────────────────────────────────────────
+  notify-telegram:
+    <<: *scanner-base
+    entrypoint: ["python3", "-u", "notifier/telegram.py"]
+
+
+# ════════════════════════════════════════════════════════════════
+#  VOLUMES
+#  Named volume so all services share the same data directory
+#  Data persists across container restarts and removals
+#
+#  Location on host: docker volume inspect vf-scan-data
+#  Manual override:  change to ./data:/app/data for local path
+# ════════════════════════════════════════════════════════════════
+volumes:
+  scan-data:
+    name: vf-scan-data
+    driver: local
+
+
+# ════════════════════════════════════════════════════════════════
+#  NETWORKS
+#  Isolated bridge network — web and scanner are isolated
+#  from other Docker containers on the host
+# ════════════════════════════════════════════════════════════════
+networks:
+  vf-net:
+    name: vf-network
+    driver: bridge

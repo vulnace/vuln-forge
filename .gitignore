@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual env
+py-venv
+venv/
+.venv/
+env/
+
+# Environment variables
+.env
+.env.*
+
+# Database files
+data/*.db
+data/*.db-wal
+data/*.db-shm
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# SQLMap output
+/tmp/sqlmap/
+
+# Nuclei output
+/tmp/nuclei*/
+
+# Arjun output
+/tmp/arjun_output.json
+
+# Docker
+*.tar
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# PDF reports
+data/*.pdf
+
+# Python package metadata
+*.egg-info/
