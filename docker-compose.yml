@@ -14,7 +14,12 @@
 
 x-scanner-base: &scanner-base
   image: vuln-forge
-  env_file: .env
+  env_file:
+    - .env
+  environment:
+    DISCORD_WEBHOOK: ${DISCORD_WEBHOOK:-}
+    TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+    TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
   volumes:
     - scan-data:/app/data
   networks:
@@ -42,7 +47,12 @@ services:
       dockerfile: web/Dockerfile
     image: vuln-forge-web
     container_name: vf-web
-    env_file: .env
+    env_file:
+      - .env
+    environment:
+      DISCORD_WEBHOOK: ${DISCORD_WEBHOOK:-}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
     ports:
       - "8000:8000"
     volumes:
